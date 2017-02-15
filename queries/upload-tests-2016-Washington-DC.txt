@@ -1,0 +1,29 @@
+SELECT 
+	test_id, 
+	STRFTIME_UTC_USEC(INTEGER(web100_log_entry.log_time) * 1000000, '%Y-%m-%d %T') AS UTC_date_time, 
+	PARSE_IP(connection_spec.client_ip) AS client_ip_numeric, 
+	connection_spec.server_hostname AS server_hostname, 
+	connection_spec.client_application AS client_app,
+	connection_spec.client_geolocation.city AS city,
+	connection_spec.client_geolocation.postal_code AS zipcode,	
+	connection_spec.client_geolocation.area_code AS area_code,
+	connection_spec.client_geolocation.postal_code AS postal_code,
+	connection_spec.client_geolocation.latitude AS client_latitude,
+	connection_spec.client_geolocation.longitude AS client_longitude, 
+	8 * web100_log_entry.snap.HCThruOctetsReceived/web100_log_entry.snap.Duration AS uploadThroughput, 
+	web100_log_entry.snap.Duration AS duration,
+	web100_log_entry.snap.HCThruOctetsReceived AS HCThruOctetsRecv 
+FROM [plx.google:m_lab.ndt.all] 
+WHERE 
+	web100_log_entry.log_time >= PARSE_UTC_USEC('2016-01-01 00:00:00') / POW(10, 6) AND 
+	web100_log_entry.log_time < PARSE_UTC_USEC('2016-12-31 00:00:00') / POW(10, 6) AND 
+	connection_spec.client_geolocation.longitude > -77.45 AND
+	connection_spec.client_geolocation.longitude < -76.90 AND
+	connection_spec.client_geolocation.latitude > 38.79 AND
+	connection_spec.client_geolocation.latitude < 38.99 AND
+	IS_EXPLICITLY_DEFINED(web100_log_entry.snap.Duration) AND 
+	IS_EXPLICITLY_DEFINED(web100_log_entry.snap.HCThruOctetsReceived) AND 
+	web100_log_entry.snap.HCThruOctetsReceived >= 8192 AND 
+	web100_log_entry.snap.Duration >= 9000000 AND 
+	web100_log_entry.snap.Duration < 3600000000 AND 
+	blacklist_flags == 0
